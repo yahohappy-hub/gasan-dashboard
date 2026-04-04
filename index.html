@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="호남 분산특구 연계형 가산가소가판 사업모델 CAPEX/OPEX/수익 민감도분석 인터랙티브 대시보드">
+<meta property="og:title" content="가산가소가판 민감도분석 대시보드">
+<meta property="og:description" content="PV+ESS+V2G+AMI 2.0 통합 에너지 사업모델의 투자회수·NPV·IRR 실시간 분석">
+<meta property="og:type" content="website">
+<title>가산가소가판 CAPEX/OPEX 민감도분석 대시보드</title>
+<style>
+/* ============================================
+   가산가소가판 민감도분석 대시보드 — 독립 실행용 CSS
+   Claude 아티팩트 환경의 CSS 변수를 로컬에서 재현
+   이 파일을 Vite 프로젝트의 src/index.css 에 붙여넣으세요.
+   ============================================ */
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 720px;
+  margin: 0 auto;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ---------- Light Mode (default) ---------- */
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f4f0;
+  --color-background-tertiary: #eeedea;
+  --color-background-info: #e6f1fb;
+  --color-background-success: #eaf3de;
+  --color-background-warning: #faeeda;
+  --color-background-danger: #fcebeb;
+
+  --color-text-primary: #2c2c2a;
+  --color-text-secondary: #5f5e5a;
+  --color-text-tertiary: #888780;
+  --color-text-info: #185fa5;
+  --color-text-success: #3b6d11;
+  --color-text-warning: #854f0b;
+  --color-text-danger: #a32d2d;
+
+  --color-border-primary: rgba(0,0,0,0.4);
+  --color-border-secondary: rgba(0,0,0,0.3);
+  --color-border-tertiary: rgba(0,0,0,0.15);
+  --color-border-info: #85b7eb;
+  --color-border-success: #97c459;
+  --color-border-warning: #ef9f27;
+  --color-border-danger: #f09595;
+
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+}
+
+/* ---------- Dark Mode ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #1a1a18;
+    --color-background-secondary: #2c2c2a;
+    --color-background-tertiary: #3d3d3a;
+    --color-background-info: #0c447c;
+    --color-background-success: #27500a;
+    --color-background-warning: #633806;
+    --color-background-danger: #501313;
+
+    --color-text-primary: #e8e6df;
+    --color-text-secondary: #b4b2a9;
+    --color-text-tertiary: #888780;
+    --color-text-info: #85b7eb;
+    --color-text-success: #97c459;
+    --color-text-warning: #ef9f27;
+    --color-text-danger: #f09595;
+
+    --color-border-primary: rgba(255,255,255,0.4);
+    --color-border-secondary: rgba(255,255,255,0.3);
+    --color-border-tertiary: rgba(255,255,255,0.15);
+    --color-border-info: #378add;
+    --color-border-success: #639922;
+    --color-border-warning: #ba7517;
+    --color-border-danger: #e24b4a;
+  }
+}
+
+/* ---------- Form Elements (아티팩트 내장 스타일 재현) ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--color-border-tertiary);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-background-primary);
+  border: 2px solid var(--color-border-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  border-color: var(--color-text-info);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-background-primary);
+  border: 2px solid var(--color-border-secondary);
+  cursor: pointer;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+button:hover { opacity: 0.85; }
+button:active { transform: scale(0.98); }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-tertiary);
+  border-radius: 3px;
+}
+
+/* ---------- Table ---------- */
+table { border-spacing: 0; }
+th, td { vertical-align: middle; }
+
+</style>
+</head>
+<body>
+<h2 style="margin-bottom:16px; font-weight:500; font-size:18px;">
+  호남 DSO 연계형 가산가소가판 — CAPEX·OPEX·수익 민감도분석
+</h2>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+const fmt = (v) => Math.round(v).toLocaleString();
+const fmtM = (v) => Math.round(v).toLocaleString(); // 만원 단위 그대로 표시
+
+const defaults = {
+  pvKw: 5, pvUnitCost: 140, pvSubsidy: 50,
+  essKwh: 10, essUnitCost: 75, essSubsidy: 33,
+  chargerCost: 300, chargerSubsidy: 50,
+  amiCost: 100, amiSubsidy: 50,
+  installCost: 200,
+  pvDegRate: 0.5, essReplaceYear: 12, essReplaceCost: 40,
+  annualMaint: 15, insuranceCost: 8,
+  inverterReplaceYear: 12, inverterReplaceCost: 60,
+  solarYield: 1250,
+  selfConsumeRatio: 58,
+  touPeakPrice: 220, touOffPeakPrice: 80, touMidPrice: 130,
+  essRoundTrip: 92, evV2hKwh: 12, evEfficiency: 90,
+  drEvents: 30, drPayPerKw: 1000, nwaContractPerKw: 150000,
+  nwaShareRatio: 33, p2pPremium: 30, p2pVolume: 500,
+  regionalDiscount: 30, subsidyIncentive: 20,
+  discountRate: 5, projectLife: 25,
+};
+
+const SliderRow = ({ label, unit, min, max, step, value, onChange, hint }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+    <div style={{ width: 160, fontSize: 12, color: "var(--color-text-secondary)", flexShrink: 0 }}>{label}</div>
+    <input type="range" min={min} max={max} step={step} value={value}
+      onChange={e => onChange(Number(e.target.value))}
+      style={{ flex: 1, minWidth: 80 }} />
+    <div style={{ width: 72, textAlign: "right", fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+      {typeof value === "number" ? (value >= 1000 ? fmt(value) : value) : value}{unit}
+    </div>
+  </div>
+);
+
+const MetricCard = ({ label, value, sub, accent }) => (
+  <div style={{
+    background: accent ? "var(--color-background-info)" : "var(--color-background-secondary)",
+    borderRadius: "var(--border-radius-md)", padding: "12px 14px", textAlign: "center",
+    border: accent ? "1.5px solid var(--color-border-info)" : "none"
+  }}>
+    <div style={{ fontSize: 11, color: accent ? "var(--color-text-info)" : "var(--color-text-tertiary)", marginBottom: 2 }}>{label}</div>
+    <div style={{ fontSize: 20, fontWeight: 500, color: accent ? "var(--color-text-info)" : "var(--color-text-primary)" }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: accent ? "var(--color-text-info)" : "var(--color-text-tertiary)", marginTop: 2 }}>{sub}</div>}
+  </div>
+);
+
+const Section = ({ title, children }) => (
+  <div style={{ marginBottom: 20 }}>
+    <div style={{ fontSize: 14, fontWeight: 500, color: "var(--color-text-primary)", marginBottom: 10,
+      borderBottom: "0.5px solid var(--color-border-tertiary)", paddingBottom: 6 }}>{title}</div>
+    {children}
+  </div>
+);
+
+function App() {
+  const [p, setP] = useState(defaults);
+  const set = (key) => (val) => setP(prev => ({ ...prev, [key]: val }));
+  const [scenario, setScenario] = useState("C");
+  const [tab, setTab] = useState("cost");
+
+  const calc = useMemo(() => {
+    // CAPEX
+    const pvTotal = p.pvKw * p.pvUnitCost;
+    const pvNet = pvTotal * (1 - p.pvSubsidy / 100);
+    const essTotal = p.essKwh * p.essUnitCost;
+    const essNet = essTotal * (1 - p.essSubsidy / 100);
+    const chargerNet = p.chargerCost * (1 - p.chargerSubsidy / 100);
+    const amiNet = p.amiCost * (1 - p.amiSubsidy / 100);
+    const capexGross = pvTotal + essTotal + p.chargerCost + p.amiCost + p.installCost;
+    const capexNet = pvNet + essNet + chargerNet + amiNet + p.installCost;
+
+    // Annual OPEX
+    const opexAnnual = p.annualMaint + p.insuranceCost;
+    const opexLifetime = opexAnnual * p.projectLife;
+    const essReplace = p.essReplaceCost * p.essKwh; // 만원 (셀 교체비용)
+    const inverterReplace = p.inverterReplaceCost;
+    const majorReplace = essReplace + inverterReplace;
+
+    // Generation
+    const annualGen = p.pvKw * p.solarYield;
+    const selfConsume = annualGen * p.selfConsumeRatio / 100;
+    const surplus = annualGen - selfConsume;
+
+    // Revenue by scenario
+    const avgSelfPrice = (p.touPeakPrice * 0.4 + p.touMidPrice * 0.35 + p.touOffPeakPrice * 0.25);
+    const selfSaving = selfConsume * avgSelfPrice / 10000;
+
+    const essTouArb = Math.min(surplus * 0.75, p.essKwh * 365 * 0.8) *
+      (p.touPeakPrice - p.touOffPeakPrice) * p.essRoundTrip / 100 / 10000;
+
+    const v2gRev = p.evV2hKwh * 300 * 0.6 *
+      (p.touPeakPrice - p.touOffPeakPrice) * p.evEfficiency / 100 / 10000;
+
+    const drRev = p.pvKw * p.drEvents * p.drPayPerKw / 10000;
+    const nwaRev = p.pvKw * p.nwaContractPerKw / 10000 * p.nwaShareRatio / 100;
+    const surplusSale = (surplus * 0.2) * 100 / 10000;
+    const p2pRev = p.p2pVolume * p.p2pPremium / 10000;
+    const regionalBenefit = (selfConsume + surplus * 0.3) * p.regionalDiscount / 10000;
+    const subsidyBenefit = p.subsidyIncentive;
+
+    let annualRev;
+    if (scenario === "A") annualRev = selfConsume * 120 / 10000 + surplus * 60 / 10000;
+    else if (scenario === "B") annualRev = selfSaving + essTouArb + surplusSale;
+    else if (scenario === "C") annualRev = selfSaving + essTouArb + v2gRev + drRev + nwaRev + surplusSale + p2pRev;
+    else annualRev = selfSaving + essTouArb + v2gRev + drRev + nwaRev + surplusSale + p2pRev + regionalBenefit + subsidyBenefit;
+
+    const annualNet = annualRev - opexAnnual; // 모두 만원 단위
+    const payback = annualNet > 0 ? capexNet / annualNet : 999;
+
+    // NPV & IRR approximation (모두 만원 단위)
+    let npv = -capexNet;
+    for (let y = 1; y <= p.projectLife; y++) {
+      const degraded = annualRev * Math.pow(1 - p.pvDegRate / 100, y - 1);
+      let cf = degraded - opexAnnual;
+      if (y === p.essReplaceYear) cf -= essReplace;
+      if (y === p.inverterReplaceYear) cf -= inverterReplace;
+      npv += cf / Math.pow(1 + p.discountRate / 100, y);
+    }
+
+    // Simple IRR search
+    let irrLow = -10, irrHigh = 50;
+    for (let iter = 0; iter < 50; iter++) {
+      const mid = (irrLow + irrHigh) / 2;
+      let testNpv = -capexNet;
+      for (let y = 1; y <= p.projectLife; y++) {
+        const degraded = annualRev * Math.pow(1 - p.pvDegRate / 100, y - 1);
+        let cf = degraded - opexAnnual;
+        if (y === p.essReplaceYear) cf -= essReplace;
+        if (y === p.inverterReplaceYear) cf -= inverterReplace;
+        testNpv += cf / Math.pow(1 + mid / 100, y);
+      }
+      if (testNpv > 0) irrLow = mid; else irrHigh = mid;
+    }
+    const irr = (irrLow + irrHigh) / 2;
+
+    // Revenue breakdown
+    const revBreakdown = scenario === "A" ? [
+      { name: "자가소비 절감", val: selfConsume * 120 / 10000 },
+      { name: "상계 판매", val: surplus * 60 / 10000 },
+    ] : scenario === "B" ? [
+      { name: "자가소비 절감", val: selfSaving },
+      { name: "ESS TOU 차익", val: essTouArb },
+      { name: "잉여 역송", val: surplusSale },
+    ] : scenario === "C" ? [
+      { name: "자가소비 절감", val: selfSaving },
+      { name: "ESS TOU 차익", val: essTouArb },
+      { name: "V2G 방전수익", val: v2gRev },
+      { name: "DR 참여보상", val: drRev },
+      { name: "NWA 계약", val: nwaRev },
+      { name: "잉여 역송", val: surplusSale },
+      { name: "P2P 프리미엄", val: p2pRev },
+    ] : [
+      { name: "자가소비 절감", val: selfSaving },
+      { name: "ESS TOU 차익", val: essTouArb },
+      { name: "V2G 방전수익", val: v2gRev },
+      { name: "DR 참여보상", val: drRev },
+      { name: "NWA 계약", val: nwaRev },
+      { name: "잉여 역송", val: surplusSale },
+      { name: "P2P 프리미엄", val: p2pRev },
+      { name: "지역요금 혜택", val: regionalBenefit },
+      { name: "분산특구 인센티브", val: subsidyBenefit },
+    ];
+
+    // Sensitivity ranges
+    const sensVars = [
+      { name: "PV 단가 ±30%", key: "pvUnitCost", range: [0.7, 1.3] },
+      { name: "ESS 단가 ±30%", key: "essUnitCost", range: [0.7, 1.3] },
+      { name: "보조금율 ±20%p", key: "pvSubsidy", range: [-20, 20], additive: true },
+      { name: "TOU 피크가 ±40%", key: "touPeakPrice", range: [0.6, 1.4] },
+      { name: "일사량 ±15%", key: "solarYield", range: [0.85, 1.15] },
+      { name: "할인율 3~8%", key: "discountRate", range: [3, 8], absolute: true },
+    ];
+
+    const sensitivity = sensVars.map(sv => {
+      const results = [];
+      const steps = 5;
+      for (let i = 0; i <= steps; i++) {
+        let testVal;
+        if (sv.absolute) {
+          testVal = sv.range[0] + (sv.range[1] - sv.range[0]) * i / steps;
+        } else if (sv.additive) {
+          testVal = p[sv.key] + sv.range[0] + (sv.range[1] - sv.range[0]) * i / steps;
+        } else {
+          const mult = sv.range[0] + (sv.range[1] - sv.range[0]) * i / steps;
+          testVal = p[sv.key] * mult;
+        }
+        const testP = { ...p, [sv.key]: testVal };
+        const tPvNet = testP.pvKw * testP.pvUnitCost * (1 - testP.pvSubsidy / 100);
+        const tEssNet = testP.essKwh * testP.essUnitCost * (1 - testP.essSubsidy / 100);
+        const tCapex = tPvNet + tEssNet + testP.chargerCost * (1 - testP.chargerSubsidy / 100)
+          + testP.amiCost * (1 - testP.amiSubsidy / 100) + testP.installCost;
+
+        const tGen = testP.pvKw * testP.solarYield;
+        const tSelf = tGen * testP.selfConsumeRatio / 100;
+        const tSurplus = tGen - tSelf;
+        const tAvg = (testP.touPeakPrice * 0.4 + testP.touMidPrice * 0.35 + testP.touOffPeakPrice * 0.25);
+        const tSelfSav = tSelf * tAvg / 10000;
+        const tEssArb = Math.min(tSurplus * 0.75, testP.essKwh * 365 * 0.8) *
+          (testP.touPeakPrice - testP.touOffPeakPrice) * testP.essRoundTrip / 100 / 10000;
+        const tV2g = testP.evV2hKwh * 300 * 0.6 * (testP.touPeakPrice - testP.touOffPeakPrice) * testP.evEfficiency / 100 / 10000;
+        const tDr = testP.pvKw * testP.drEvents * testP.drPayPerKw / 10000;
+        const tNwa = testP.pvKw * testP.nwaContractPerKw / 10000 * testP.nwaShareRatio / 100;
+        const tSurSale = (tSurplus * 0.2) * 100 / 10000;
+        const tP2p = testP.p2pVolume * testP.p2pPremium / 10000;
+        const tReg = (tSelf + tSurplus * 0.3) * testP.regionalDiscount / 10000;
+
+        let tRev;
+        if (scenario === "C") tRev = tSelfSav + tEssArb + tV2g + tDr + tNwa + tSurSale + tP2p;
+        else if (scenario === "D") tRev = tSelfSav + tEssArb + tV2g + tDr + tNwa + tSurSale + tP2p + tReg + testP.subsidyIncentive;
+        else if (scenario === "B") tRev = tSelfSav + tEssArb + tSurSale;
+        else tRev = tSelf * 120 / 10000 + tSurplus * 60 / 10000;
+
+        const tNet = tRev - (testP.annualMaint + testP.insuranceCost);
+        const tPB = tNet > 0 ? tCapex / tNet : 99;
+
+        let tNpv = -tCapex;
+        for (let y = 1; y <= testP.projectLife; y++) {
+          const deg = tRev * Math.pow(1 - testP.pvDegRate / 100, y - 1);
+          let cf = deg - (testP.annualMaint + testP.insuranceCost);
+          if (y === testP.essReplaceYear) cf -= testP.essReplaceCost * testP.essKwh;
+          if (y === testP.inverterReplaceYear) cf -= testP.inverterReplaceCost;
+          tNpv += cf / Math.pow(1 + testP.discountRate / 100, y);
+        }
+        results.push({ x: Math.round(testVal), payback: Math.round(tPB * 10) / 10, npv: Math.round(tNpv) });
+      }
+      return { ...sv, results };
+    });
+
+    // Cumulative cash flow (모두 만원 단위)
+    const cashFlow = [];
+    let cumulative = -capexNet;
+    cashFlow.push({ year: 0, annual: -capexNet, cumulative });
+    for (let y = 1; y <= p.projectLife; y++) {
+      const deg = annualRev * Math.pow(1 - p.pvDegRate / 100, y - 1);
+      let cf = deg - opexAnnual;
+      if (y === p.essReplaceYear) cf -= essReplace;
+      if (y === p.inverterReplaceYear) cf -= inverterReplace;
+      cumulative += cf;
+      cashFlow.push({ year: y, annual: Math.round(cf), cumulative: Math.round(cumulative) });
+    }
+
+    return {
+      capex: { pvTotal, pvNet, essTotal, essNet, chargerNet, amiNet, gross: capexGross, net: capexNet },
+      opex: { annual: opexAnnual, lifetime: opexLifetime, essReplace, inverterReplace, majorReplace,
+        totalLifeCost: capexNet + opexLifetime + majorReplace },
+      gen: { annualGen, selfConsume, surplus },
+      rev: { annual: annualRev, annualNet, payback, npv, irr, breakdown: revBreakdown },
+      sensitivity, cashFlow
+    };
+  }, [p, scenario]);
+
+  const maxRev = Math.max(...calc.rev.breakdown.map(r => r.val));
+
+  const tabs = [
+    { id: "cost", label: "CAPEX / OPEX" },
+    { id: "revenue", label: "수익구조" },
+    { id: "sens", label: "민감도분석" },
+    { id: "cashflow", label: "현금흐름" },
+  ];
+
+  return (
+    <div style={{ fontFamily: "var(--font-sans)", color: "var(--color-text-primary)" }}>
+      {/* Scenario selector */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+        {[
+          { id: "A", label: "A: 상계거래" },
+          { id: "B", label: "B: TOU+ESS" },
+          { id: "C", label: "C: 목표모델" },
+          { id: "D", label: "D: 지역혜택" },
+        ].map(s => (
+          <button key={s.id} onClick={() => setScenario(s.id)}
+            style={{
+              padding: "6px 14px", fontSize: 12, borderRadius: "var(--border-radius-md)", cursor: "pointer",
+              border: scenario === s.id ? "1.5px solid var(--color-border-info)" : "0.5px solid var(--color-border-tertiary)",
+              background: scenario === s.id ? "var(--color-background-info)" : "transparent",
+              color: scenario === s.id ? "var(--color-text-info)" : "var(--color-text-secondary)",
+              fontWeight: scenario === s.id ? 500 : 400
+            }}>{s.label}</button>
+        ))}
+      </div>
+
+      {/* KPI cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10, marginBottom: 16 }}>
+        <MetricCard label="CAPEX (보조후)" value={`${fmtM(calc.capex.net)}만`} sub={`총 ${fmtM(calc.capex.gross)}만`} />
+        <MetricCard label="연간 OPEX" value={`${p.annualMaint + p.insuranceCost}만`} sub="유지+보험" />
+        <MetricCard label="연간 순수익" value={`${Math.round(calc.rev.annualNet)}만`} accent />
+        <MetricCard label="투자회수" value={`${calc.rev.payback.toFixed(1)}년`} accent={calc.rev.payback < 10} />
+        <MetricCard label="NPV (25년)" value={`${fmt(Math.round(calc.rev.npv))}만`}
+          sub={`할인율 ${p.discountRate}%`} accent={calc.rev.npv > 0} />
+        <MetricCard label="IRR" value={`${calc.rev.irr.toFixed(1)}%`}
+          accent={calc.rev.irr > p.discountRate} />
+      </div>
+
+      {/* Tab navigation */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 14, borderBottom: "0.5px solid var(--color-border-tertiary)", paddingBottom: 0 }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{
+              padding: "8px 14px", fontSize: 12, border: "none", cursor: "pointer",
+              background: "transparent",
+              color: tab === t.id ? "var(--color-text-info)" : "var(--color-text-secondary)",
+              fontWeight: tab === t.id ? 500 : 400,
+              borderBottom: tab === t.id ? "2px solid var(--color-text-info)" : "2px solid transparent",
+              marginBottom: -1
+            }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* CAPEX / OPEX Tab */}
+      {tab === "cost" && (
+        <div>
+          <Section title="CAPEX 파라미터 조정">
+            <SliderRow label="PV 용량" unit="kW" min={2} max={15} step={1} value={p.pvKw} onChange={set("pvKw")} />
+            <SliderRow label="PV 단가" unit="만/kW" min={80} max={200} step={5} value={p.pvUnitCost} onChange={set("pvUnitCost")} />
+            <SliderRow label="PV 보조금율" unit="%" min={0} max={70} step={5} value={p.pvSubsidy} onChange={set("pvSubsidy")} />
+            <SliderRow label="ESS 용량" unit="kWh" min={5} max={20} step={1} value={p.essKwh} onChange={set("essKwh")} />
+            <SliderRow label="ESS 단가" unit="만/kWh" min={40} max={120} step={5} value={p.essUnitCost} onChange={set("essUnitCost")} />
+            <SliderRow label="ESS 보조금율" unit="%" min={0} max={60} step={5} value={p.essSubsidy} onChange={set("essSubsidy")} />
+            <SliderRow label="양방향충전기" unit="만원" min={150} max={500} step={10} value={p.chargerCost} onChange={set("chargerCost")} />
+            <SliderRow label="충전기 보조금율" unit="%" min={0} max={70} step={5} value={p.chargerSubsidy} onChange={set("chargerSubsidy")} />
+          </Section>
+
+          <Section title="CAPEX 상세 (단위: 만원)">
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
+                  <th style={{ textAlign: "left", padding: "6px 0", fontWeight: 500 }}>항목</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500 }}>총비용</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500 }}>보조금</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500 }}>실부담</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["태양광 PV", calc.capex.pvTotal, calc.capex.pvTotal - calc.capex.pvNet, calc.capex.pvNet],
+                  ["가정용 ESS", calc.capex.essTotal, calc.capex.essTotal - calc.capex.essNet, calc.capex.essNet],
+                  ["양방향 충전기", p.chargerCost, p.chargerCost - calc.capex.chargerNet, calc.capex.chargerNet],
+                  ["AMI 2.0+분전반", p.amiCost, p.amiCost - calc.capex.amiNet, calc.capex.amiNet],
+                  ["설치 공사비", p.installCost, 0, p.installCost],
+                ].map(([name, tot, sub, net], i) => (
+                  <tr key={i} style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
+                    <td style={{ padding: "6px 0", color: "var(--color-text-secondary)" }}>{name}</td>
+                    <td style={{ textAlign: "right", padding: "6px 0" }}>{fmt(tot)}</td>
+                    <td style={{ textAlign: "right", padding: "6px 0", color: "var(--color-text-success)" }}>-{fmt(sub)}</td>
+                    <td style={{ textAlign: "right", padding: "6px 0", fontWeight: 500 }}>{fmt(net)}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 500 }}>
+                  <td style={{ padding: "8px 0" }}>합계</td>
+                  <td style={{ textAlign: "right", padding: "8px 0" }}>{fmt(calc.capex.gross)}</td>
+                  <td style={{ textAlign: "right", padding: "8px 0", color: "var(--color-text-success)" }}>-{fmt(calc.capex.gross - calc.capex.net)}</td>
+                  <td style={{ textAlign: "right", padding: "8px 0" }}>{fmt(calc.capex.net)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </Section>
+
+          <Section title="OPEX 파라미터">
+            <SliderRow label="연간 유지보수" unit="만원" min={5} max={40} step={1} value={p.annualMaint} onChange={set("annualMaint")} />
+            <SliderRow label="연간 보험료" unit="만원" min={0} max={20} step={1} value={p.insuranceCost} onChange={set("insuranceCost")} />
+            <SliderRow label="ESS 교체 시점" unit="년차" min={8} max={18} step={1} value={p.essReplaceYear} onChange={set("essReplaceYear")} />
+            <SliderRow label="ESS 교체단가" unit="만/kWh" min={20} max={60} step={5} value={p.essReplaceCost} onChange={set("essReplaceCost")} />
+            <SliderRow label="인버터 교체 시점" unit="년차" min={8} max={18} step={1} value={p.inverterReplaceYear} onChange={set("inverterReplaceYear")} />
+            <SliderRow label="인버터 교체비용" unit="만원" min={30} max={120} step={5} value={p.inverterReplaceCost} onChange={set("inverterReplaceCost")} />
+          </Section>
+
+          <Section title="OPEX + Life-Cycle Cost (25년, 만원)">
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <tbody>
+                {[
+                  ["연간 유지보수+보험", `${p.annualMaint + p.insuranceCost}/년`, `${(p.annualMaint + p.insuranceCost) * p.projectLife}`],
+                  [`ESS 교체 (${p.essReplaceYear}년차)`, "1회", fmt(calc.opex.essReplace)],
+                  [`인버터 교체 (${p.inverterReplaceYear}년차)`, "1회", fmt(calc.opex.inverterReplace)],
+                  ["CAPEX (실부담)", "초기", fmt(calc.capex.net)],
+                ].map(([name, freq, cost], i) => (
+                  <tr key={i} style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
+                    <td style={{ padding: "6px 0", color: "var(--color-text-secondary)" }}>{name}</td>
+                    <td style={{ textAlign: "center", padding: "6px 0", color: "var(--color-text-tertiary)", fontSize: 12 }}>{freq}</td>
+                    <td style={{ textAlign: "right", padding: "6px 0" }}>{cost}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 500, borderTop: "1.5px solid var(--color-border-secondary)" }}>
+                  <td style={{ padding: "8px 0" }} colSpan={2}>총 생애비용 (LCC)</td>
+                  <td style={{ textAlign: "right", padding: "8px 0" }}>
+                    {fmt(calc.capex.net + (p.annualMaint + p.insuranceCost) * p.projectLife + calc.opex.essReplace + calc.opex.inverterReplace)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </Section>
+        </div>
+      )}
+
+      {/* Revenue Tab */}
+      {tab === "revenue" && (
+        <div>
+          <Section title="발전 및 요금 파라미터">
+            <SliderRow label="연간 일사시간" unit="h" min={900} max={1600} step={25} value={p.solarYield} onChange={set("solarYield")} />
+            <SliderRow label="자가소비율" unit="%" min={30} max={85} step={1} value={p.selfConsumeRatio} onChange={set("selfConsumeRatio")} />
+            <SliderRow label="TOU 피크 단가" unit="원" min={150} max={350} step={10} value={p.touPeakPrice} onChange={set("touPeakPrice")} />
+            <SliderRow label="TOU 경부하 단가" unit="원" min={40} max={120} step={5} value={p.touOffPeakPrice} onChange={set("touOffPeakPrice")} />
+            <SliderRow label="DR 이벤트 수" unit="회/년" min={10} max={80} step={5} value={p.drEvents} onChange={set("drEvents")} />
+            <SliderRow label="DR 보상단가" unit="원/kW" min={500} max={3000} step={100} value={p.drPayPerKw} onChange={set("drPayPerKw")} />
+            <SliderRow label="NWA 계약단가" unit="원/kW" min={50000} max={300000} step={10000} value={p.nwaContractPerKw} onChange={set("nwaContractPerKw")} />
+            <SliderRow label="EV V2H 할당" unit="kWh" min={5} max={30} step={1} value={p.evV2hKwh} onChange={set("evV2hKwh")} />
+          </Section>
+
+          <Section title={`시나리오 ${scenario} — 연간 수익 구성 (만원)`}>
+            {calc.rev.breakdown.map((r, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 110, fontSize: 12, color: "var(--color-text-secondary)", flexShrink: 0 }}>{r.name}</div>
+                <div style={{ flex: 1, height: 18, background: "var(--color-background-secondary)", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{
+                    width: `${Math.max(r.val / maxRev * 100, 2)}%`, height: "100%",
+                    background: "var(--color-text-info)", borderRadius: 4, opacity: 0.7, transition: "width 0.3s"
+                  }} />
+                </div>
+                <div style={{ width: 55, textAlign: "right", fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+                  {(r.val).toFixed(1)}
+                </div>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, padding: "8px 0",
+              borderTop: "1.5px solid var(--color-border-secondary)", fontWeight: 500, fontSize: 14 }}>
+              <span>연간 총 수익</span>
+              <span>{calc.rev.annual.toFixed(1)}만원</span>
+            </div>
+          </Section>
+
+          <Section title="발전량 요약">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <MetricCard label="연간 발전량" value={`${fmt(calc.gen.annualGen)}kWh`} />
+              <MetricCard label="자가소비" value={`${fmt(calc.gen.selfConsume)}kWh`} sub={`${p.selfConsumeRatio}%`} />
+              <MetricCard label="잉여전력" value={`${fmt(calc.gen.surplus)}kWh`} sub={`${100 - p.selfConsumeRatio}%`} />
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Sensitivity Tab */}
+      {tab === "sens" && (
+        <div>
+          <Section title="할인율 및 수명">
+            <SliderRow label="할인율" unit="%" min={2} max={10} step={0.5} value={p.discountRate} onChange={set("discountRate")} />
+            <SliderRow label="프로젝트 수명" unit="년" min={15} max={30} step={1} value={p.projectLife} onChange={set("projectLife")} />
+            <SliderRow label="PV 연간 열화율" unit="%" min={0.2} max={1.0} step={0.1} value={p.pvDegRate} onChange={set("pvDegRate")} />
+          </Section>
+
+          <Section title={`민감도 분석 — 시나리오 ${scenario}`}>
+            <div style={{ fontSize: 12, color: "var(--color-text-tertiary)", marginBottom: 10 }}>
+              각 변수를 변동시킬 때 투자회수기간(년)과 NPV(만원) 변화
+            </div>
+            {calc.sensitivity.map((sv, si) => (
+              <div key={si} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>{sv.name}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 4 }}>
+                  {sv.results.map((r, ri) => {
+                    const isBase = ri === Math.floor(sv.results.length / 2);
+                    return (
+                      <div key={ri} style={{
+                        background: isBase ? "var(--color-background-info)" : "var(--color-background-secondary)",
+                        borderRadius: "var(--border-radius-md)", padding: "8px 4px", textAlign: "center",
+                        border: isBase ? "1px solid var(--color-border-info)" : "none",
+                        fontSize: 11
+                      }}>
+                        <div style={{ color: "var(--color-text-tertiary)", marginBottom: 2 }}>{r.x}</div>
+                        <div style={{ fontWeight: 500, color: r.payback > 15 ? "var(--color-text-danger)" : r.payback < 10 ? "var(--color-text-success)" : "var(--color-text-primary)" }}>
+                          {r.payback > 50 ? ">50" : r.payback}년
+                        </div>
+                        <div style={{ color: r.npv > 0 ? "var(--color-text-success)" : "var(--color-text-danger)", fontSize: 10 }}>
+                          {r.npv > 0 ? "+" : ""}{fmt(Math.round(r.npv))}만
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </Section>
+
+          <Section title="토네이도 차트 — 투자회수기간 변동폭">
+            {calc.sensitivity.map((sv, si) => {
+              const min = Math.min(...sv.results.map(r => r.payback));
+              const max = Math.min(25, Math.max(...sv.results.map(r => r.payback)));
+              const base = calc.rev.payback;
+              const range = 25;
+              return (
+                <div key={si} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <div style={{ width: 120, fontSize: 11, color: "var(--color-text-secondary)", flexShrink: 0, textAlign: "right" }}>{sv.name}</div>
+                  <div style={{ flex: 1, height: 16, position: "relative", background: "var(--color-background-secondary)", borderRadius: 3 }}>
+                    <div style={{
+                      position: "absolute",
+                      left: `${(min / range) * 100}%`,
+                      width: `${((max - min) / range) * 100}%`,
+                      height: "100%", borderRadius: 3,
+                      background: (max - min) > 5 ? "var(--color-text-danger)" : (max - min) > 3 ? "var(--color-text-warning)" : "var(--color-text-info)",
+                      opacity: 0.6
+                    }} />
+                    <div style={{
+                      position: "absolute",
+                      left: `${(base / range) * 100}%`,
+                      top: -2, width: 2, height: 20,
+                      background: "var(--color-text-primary)", borderRadius: 1
+                    }} />
+                  </div>
+                  <div style={{ width: 60, fontSize: 11, color: "var(--color-text-tertiary)", flexShrink: 0 }}>
+                    {min.toFixed(1)}~{max.toFixed(1)}
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginTop: 6 }}>
+              막대 = 회수기간 변동 범위 | 세로선 = 기준값 {calc.rev.payback.toFixed(1)}년
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* Cash Flow Tab */}
+      {tab === "cashflow" && (
+        <div>
+          <Section title={`누적 현금흐름 — 시나리오 ${scenario} (25년)`}>
+            <div style={{ position: "relative", height: 200, marginBottom: 8 }}>
+              {(() => {
+                const data = calc.cashFlow;
+                const maxY = Math.max(...data.map(d => d.cumulative));
+                const minY = Math.min(...data.map(d => d.cumulative));
+                const rangeY = maxY - minY || 1;
+                const w = 100;
+                const h = 180;
+                const zeroY = ((maxY) / rangeY) * h;
+                return (
+                  <svg viewBox={`0 0 ${w + 10} ${h + 20}`} style={{ width: "100%", height: "100%" }} preserveAspectRatio="none">
+                    <line x1={3} y1={zeroY} x2={w + 5} y2={zeroY} stroke="var(--color-border-secondary)" strokeWidth={0.3} strokeDasharray="2 2" />
+                    <polyline fill="none" stroke="var(--color-text-info)" strokeWidth={0.8}
+                      points={data.map((d, i) => `${3 + i * (w / (data.length - 1))},${((maxY - d.cumulative) / rangeY) * h}`).join(" ")} />
+                    {data.filter((d, i) => i % 5 === 0 || d.cumulative >= 0 && calc.cashFlow[Math.max(0, i - 1)].cumulative < 0).map((d, i) => {
+                      const x = 3 + d.year * (w / (data.length - 1));
+                      const y = ((maxY - d.cumulative) / rangeY) * h;
+                      return <circle key={d.year} cx={x} cy={y} r={0.8} fill="var(--color-text-info)" />;
+                    })}
+                  </svg>
+                );
+              })()}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 3, fontSize: 10 }}>
+              {calc.cashFlow.filter((_, i) => i % 5 === 0 || i === calc.cashFlow.length - 1).map(d => (
+                <div key={d.year} style={{
+                  background: d.cumulative >= 0 ? "var(--color-background-success)" : "var(--color-background-secondary)",
+                  padding: "4px 6px", borderRadius: 4, textAlign: "center"
+                }}>
+                  <div style={{ color: "var(--color-text-tertiary)" }}>{d.year}년차</div>
+                  <div style={{ fontWeight: 500, color: d.cumulative >= 0 ? "var(--color-text-success)" : "var(--color-text-primary)" }}>
+                    {d.cumulative >= 0 ? "+" : ""}{fmt(Math.round(d.cumulative))}만
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="연도별 상세 현금흐름 (만원)">
+            <div style={{ maxHeight: 300, overflowY: "auto" }}>
+              <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "0.5px solid var(--color-border-tertiary)", position: "sticky", top: 0, background: "var(--color-background-primary)" }}>
+                    <th style={{ textAlign: "left", padding: "4px 0", fontWeight: 500 }}>연차</th>
+                    <th style={{ textAlign: "right", padding: "4px 0", fontWeight: 500 }}>연간CF</th>
+                    <th style={{ textAlign: "right", padding: "4px 0", fontWeight: 500 }}>누적CF</th>
+                    <th style={{ textAlign: "right", padding: "4px 0", fontWeight: 500 }}>비고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calc.cashFlow.map(d => (
+                    <tr key={d.year} style={{
+                      borderBottom: "0.5px solid var(--color-border-tertiary)",
+                      background: d.cumulative >= 0 && d.year > 0 ? "var(--color-background-success)" : "transparent",
+                      opacity: d.cumulative >= 0 && d.year > 0 ? 0.85 : 1
+                    }}>
+                      <td style={{ padding: "3px 0" }}>{d.year}</td>
+                      <td style={{ textAlign: "right", padding: "3px 0", color: d.annual >= 0 ? "var(--color-text-success)" : "var(--color-text-danger)" }}>
+                        {d.annual >= 0 ? "+" : ""}{fmt(Math.round(d.annual))}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "3px 0", fontWeight: d.year === 0 || d.cumulative >= 0 ? 500 : 400 }}>
+                        {d.cumulative >= 0 ? "+" : ""}{fmt(Math.round(d.cumulative))}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "3px 0", fontSize: 10, color: "var(--color-text-tertiary)" }}>
+                        {d.year === 0 ? "초기투자" : d.year === p.essReplaceYear ? "ESS교체" : d.year === p.inverterReplaceYear ? "인버터교체" : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
